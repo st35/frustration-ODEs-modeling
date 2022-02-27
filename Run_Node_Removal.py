@@ -25,6 +25,7 @@ updateindex = 0
 Path('./updatednetworks/RUN_' + str(world_rank)).mkdir()
 copy('../../networkfiles/' + inputnetwork + '.topo', 'updatednetworks/RUN_' + str(world_rank) + '/network_' + str(updateindex) + '.topo')
 Path('./RACIPE_Output/RUN_' + str(world_rank)).mkdir()
+Path('./sensitivities/RUN_' + str(world_rank)).mkdir()
 Path('./steadystates/RUN_' + str(world_rank)).mkdir()
 
 outputfile = open('outputfiles/' + inputnetwork + '_' + str(world_rank) + '.log', 'w')
@@ -46,7 +47,9 @@ while True:
 
 	outputfile.write(str(len(N.nodenames)) + ' ' + str(N.numedges) + ' ' + str(PC_Score) + ' ' + str(F_Score) + '\n')
 
-	newedgecount = Remove_Nodes(inputnetwork, world_rank, updateindex)
+	sensitivitycalc = subprocess.run(['../../code/Calculate_Sensitivities', 'network', str(world_rank), str(updateindex), '1'], capture_output = True, text = True)
+
+	newedgecount = Remove_Nodes(1, inputnetwork, world_rank, updateindex)
 
 	if newedgecount < 1:
 		break

@@ -1,4 +1,4 @@
-def Remove_Nodes(inputnetwork, world_rank, updateindex):
+def Remove_Nodes(orderid, inputnetwork, world_rank, updateindex):
 	from random import randint
 
 	nodenames = []
@@ -8,6 +8,17 @@ def Remove_Nodes(inputnetwork, world_rank, updateindex):
 			nodenames.append(l[0].strip())
 
 	deletednode = randint(0, len(nodenames) - 1)
+	if orderid != 0:
+		S = []
+		with open('sensitivities/RUN_' + str(world_rank) + '/sensitivity_' + str(updateindex) + '.log', 'r') as f:
+			for line in f:
+				S.append(float(line.strip()))
+		I = []
+		if orderid == -1:
+			I = [] + [i[0] for i in sorted(enumerate(S), key = lambda x:x[1], reverse = True)]
+		else:
+			I = [] + [i[0] for i in sorted(enumerate(S), key = lambda x:x[1])]
+		deletednode = I[0]
 
 	T = []
 	count = 0
@@ -36,7 +47,7 @@ def Remove_Nodes(inputnetwork, world_rank, updateindex):
 
 	return edgecount
 
-def Remove_Edges(inputnetwork, world_rank, updateindex):
+def Remove_Edges(orderid, inputnetwork, world_rank, updateindex):
 	from random import randint
 
 	nodenames = []
@@ -59,6 +70,24 @@ def Remove_Edges(inputnetwork, world_rank, updateindex):
 					edgeid += 1
 			count += 1
 	deletededge = edgeids[randint(0, len(edgeids) - 1)]
+
+	if orderid != 0:
+		S = []
+		count = 0
+		with open('sensitivities/RUN_' + str(world_rank) + '/sensitivity_' + str(updateindex) + '.log', 'r') as f:
+			for line in f:
+				l = line.strip().split(' ')
+				for i in range(len(l)):
+					if T[count][i] > 0:
+						S.append(float(l[i].strip()))
+				count += 1
+		I = []
+		if orderid == -1:
+			I = [] + [i[0] for i in sorted(enumerate(S), key = lambda x:x[1], reverse = True)]
+		else:
+			I = [] + [i[0] for i in sorted(enumerate(S), key = lambda x:x[1])]
+		deletededge = I[0]
+
 
 	edgecount = 0
 	edgeid = 0
