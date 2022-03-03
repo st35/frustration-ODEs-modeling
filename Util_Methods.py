@@ -22,6 +22,8 @@ def Generate_Random_Networks(inputfile, outputfile):
 		edge1 = random.randint(0, len(R_new) - 1)
 		edge2 = edge1
 		while edge2 == edge1:
+			if len(R) == 1:
+				break
 			edge2 = random.randint(0, len(R_new) - 1)
 		target1 = R_new[edge1][1]
 		target2 = R_new[edge2][1]
@@ -186,3 +188,20 @@ def Steadystates_PCA(filename, skipcount):
 	pca.fit(states)
 
 	return(pca.explained_variance_ratio_)
+
+def Write_IDS_File(topofile, outputfile):
+	IDs = []
+	with open(topofile, 'r') as f:
+		count = 0
+		for line in f:
+			if count == 0:
+				count += 1
+				continue
+			l = line.strip().split('\t')
+			if l[0].strip() not in IDs:
+				IDs.append(l[0].strip())
+			if l[1].strip() not in IDs:
+				IDs.append(l[1].strip())
+	with open(outputfile, 'w') as f:
+		for i in range(len(IDs)):
+			f.write(IDs[i] + '\t' + str(i) + '\n')

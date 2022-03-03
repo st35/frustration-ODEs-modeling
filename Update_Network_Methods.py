@@ -107,3 +107,131 @@ def Remove_Edges(orderid, inputnetwork, world_rank, updateindex):
 		print('Cowhouses')
 
 	return edgecount
+
+def Merge_Nodes(mergeid, inputnetwork, world_rank, updateindex):
+	from random import random, shuffle
+
+	named_nodeids = {}
+	named_idnodes = {}
+	with open('RACIPE_Output/RUN_' + str(world_rank) + '/RUN_' + str(updateindex) + '/network_' + str(updateindex) + '.ids', 'r') as f:
+		for line in f:
+			l = line.strip().split('\t')
+			named_nodeids[l[0].strip()] = int(l[1].strip())
+			named_idnodes[int(l[1].strip())] = l[0].strip()
+	nodeids = {}
+	idnodes = {}
+	with open('RACIPE_Output/RUN_' + str(world_rank) + '/RUN_' + str(updateindex) + '/unnamednetwork_' + str(updateindex) + '.ids', 'r') as f:
+		for line in f:
+			l = line.strip().split('\t')
+			nodeids[l[0].strip()] = int(l[1].strip())
+			idnodes[int(l[1].strip())] = l[0].strip()
+	numnodes = len(nodeids)
+	network = []
+	with open('RACIPE_Output/RUN_' + str(world_rank) + '/RUN_' + str(updateindex) + '/unnamednetwork_' + str(updateindex) + '.topo', 'r') as f:
+		count = 0
+		for line in f:
+			if count == 0:
+				count += 1
+				continue
+			l = line.strip().split('\t')
+			network.append((nodeids[l[0].strip()], nodeids[l[1].strip()], int(l[2].strip())))
+	linkages = []
+	clusters = {}
+	clusterindex = numnodes
+	with open('linkages/RUN_' + str(world_rank) + '/linkage_' + str(updateindex) + '.log', 'r') as f:
+		for line in f:
+			l = line.strip().split('\t')
+			node0 = int(l[0].strip()) - 1
+			node1 = int(l[1].strip()) - 1
+			if node0 < numnodes and node1 < numnodes:
+				linkages.append((node0, node1))
+				if node0 in clusters or node1 in clusters:
+					print('MATLAB is at it. Once again.')
+				clusters[node0] = clusterindex
+				clusters[node1] = clusterindex
+				named_idnodes[clusterindex] = named_idnodes[node0] + '::' + named_idnodes[node1]
+				clusterindex += 1
+	if mergeid == 1:
+		l0 = [x for x, _ in linkages]
+		l1 = [x for _, x in linkages]
+		shuffle(l0)
+		shuffle(l1)
+		linkages = [(l0[i], l1[i]) for i in range(len(l0))]
+		clusters = {}
+		clusterindex = numnodes
+		for i in range(len(linkages)):
+			clusters[linkages[i][0]] = clusterindex
+			clusters[linkages[i][1]] = clusterindex
+			named_idnodes[clusterindex] = named_idnodes[linkages[i][0]] + '::' + named_idnodes[linkages[i][1]]
+			clusterindex += 1
+
+	updatednetwork = []
+	for i in range(len(network)):
+		node0 = network[i][0]
+		node1 = network[i][1]
+		typ = network[i][2]
+		if node0 in clusters and node1 in clusters:
+			if node0 != node1:
+				updatednetwork.append((clusters[node0], clusters[node1], typ))
+			else:
+				updatednetwork.append((clusters[node0], clusters[node1], typ))
+		elif node0 in clusters and node1 not in clusters:
+			updatednetwork.append((clusters[node0], node1, typ))
+		elif node0 not in clusters and node1 in clusters:
+			updatednetwork.append((node0, clusters[node1], typ))
+		else:
+			updatednetwork.append((node0, node1, typ))
+	Counts = {}
+	for i in range(len(updatednetwork)):
+		if updatednetwork[i] in Counts:
+			Counts[updatednetwork[i]] += 1
+		else:
+			Counts[updatednetwork[i]] = 1
+	Repeats = {}
+	for i in range(len(updatednetwork)):
+		if Counts[updatednetwork[i]] > 1:
+			if updatednetwork[i][0] == updatednetwork[i][1] and updatednetwork[i][0] < numnodes:
+				print('Level 5.')
+			if updatednetwork[i] not in Repeats:
+				Repeats[updatednetwork[i]] = []
+			Repeats[updatednetwork[i]].append(updatednetwork[i][2])
+	nodeset = set()
+	Pairs_Added = []
+	with open('updatednetworks/RUN_' + str(world_rank) + '/unnamednetwork_' + str(updateindex + 1) + '.topo', 'w') as f, open('updatednetworks/RUN_' + str(world_rank) + '/network_' + str(updateindex + 1) + '.topo', 'w') as g:
+		f.write('Source\tTarget\tType\n')
+		g.write('Source\tTarget\tType\n')
+		for i in range(len(updatednetwork)):
+			if (updatednetwork[i][0], updatednetwork[i][1]) in Pairs_Added:
+				continue
+			Pairs_Added.append((updatednetwork[i][0], updatednetwork[i][1]))
+			if updatednetwork[i] not in Repeats:
+				f.write('C' + str(updatednetwork[i][0]) + '\t' + 'C' + str(updatednetwork[i][1]) + '\t' + str(updatednetwork[i][2]) + '\n')
+				g.write(named_idnodes[updatednetwork[i][0]] + '\t' + named_idnodes[updatednetwork[i][1]] + '\t' + str(updatednetwork[i][2]) + '\n')
+				nodeset.add('C' + str(updatednetwork[i][0]))
+				nodeset.add('C' + str(updatednetwork[i][1]))
+			else:
+				onecount = sum([1 for val in Repeats[updatednetwork[i]] if val == 1])
+				twocount = sum([1 for val in Repeats[updatednetwork[i]] if val == 2])
+				if onecount > twocount:
+					f.write('C' + str(updatednetwork[i][0]) + '\t' + 'C' + str(updatednetwork[i][1]) + '\t' + str(1) + '\n')
+					g.write(named_idnodes[updatednetwork[i][0]] + '\t' + named_idnodes[updatednetwork[i][1]] + '\t' + str(1) + '\n')
+					nodeset.add('C' + str(updatednetwork[i][0]))
+					nodeset.add('C' + str(updatednetwork[i][1]))
+				elif onecount < twocount:
+					f.write('C' + str(updatednetwork[i][0]) + '\t' + 'C' + str(updatednetwork[i][1]) + '\t' + str(2) + '\n')
+					g.write(named_idnodes[updatednetwork[i][0]] + '\t' + named_idnodes[updatednetwork[i][1]] + '\t' + str(2) + '\n')
+					nodeset.add('C' + str(updatednetwork[i][0]))
+					nodeset.add('C' + str(updatednetwork[i][1]))
+				else:
+					if random() < 0.5:
+						f.write('C' + str(updatednetwork[i][0]) + '\t' + 'C' + str(updatednetwors[i][1]) + '\t' + str(1) + '\n')
+						g.write(named_idnodes[updatednetwork[i][0]] + '\t' + named_idnodes[updatednetwors[i][1]] + '\t' + str(1) + '\n')
+						nodeset.add('C' + str(updatednetwork[i][0]))
+						nodeset.add('C' + str(updatednetwork[i][1]))
+					else:
+						f.write('C' + str(updatednetwork[i][0]) + '\t' + 'C' + str(updatednetwork[i][1]) + '\t' + str(2) + '\n')
+						g.write(named_idnodes[updatednetwork[i][0]] + '\t' + named_idnodes[updatednetwork[i][1]] + '\t' + str(2) + '\n')
+						nodeset.add('C' + str(updatednetwork[i][0]))
+						nodeset.add('C' + str(updatednetwork[i][1]))
+
+	return len(nodeset)
