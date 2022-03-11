@@ -18,6 +18,7 @@ def Generate_Random_Networks(inputfile, outputfile):
 		R_new.append([R[j][0], R[j][1], R[j][2]])
 		E.append(R[j][0] + '**>' + R[j][1])
 	N = int(floor(log(1e7)*len(R_new) / 2))
+	N = N*10
 	for j in range(N):
 		edge1 = random.randint(0, len(R_new) - 1)
 		edge2 = edge1
