@@ -23,7 +23,8 @@ from Evolution_PCA_Methods import *
 Excluded = []
 with open('Excluded.log', 'r') as f:
 	for line in f:
-		Excluded.append(line.strip())
+		if len(line.strip()) > 0:
+			Excluded.append(line.strip())
 
 updateindex = 0
 
@@ -54,9 +55,9 @@ while True:
 
 	sensitivitycalc = subprocess.run(['../../code/Calculate_Sensitivities', 'network', str(world_rank), str(updateindex), '1'], capture_output = True, text = True)
 
-	newnodecount, newedgecount = Remove_Nodes_With_Exclusion(0, inputnetwork, world_rank, updateindex, Excluded)
+	newnodecount, newedgecount, properflag = Remove_Nodes_With_Exclusion_Alt(0, inputnetwork, world_rank, updateindex, Excluded)
 
-	if newnodecount <= len(Excluded):
+	if newnodecount <= len(Excluded) or properflag == 0:
 		break
 
 	updateindex += 1

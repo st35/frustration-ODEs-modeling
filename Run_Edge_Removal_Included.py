@@ -23,7 +23,8 @@ from Evolution_PCA_Methods import *
 Included = []
 with open('Included.log', 'r') as f:
 	for line in f:
-		Included.append(line.strip())
+		if len(line.strip()) > 0:
+			Included.append(line.strip())
 
 updateindex = 0
 
@@ -54,7 +55,7 @@ while True:
 
 	sensitivitycalc = subprocess.run(['../../code/Calculate_Sensitivities', 'network', str(world_rank), str(updateindex), '0'], capture_output = True, text = True)
 
-	newnodecount, newedgecount, sig = Remove_Edges_With_Inclusions(0, inputnetwork, world_rank, updateindex, Included)
+	newnodecount, newedgecount, sig = Remove_Multiple_Edges_With_Inclusions(0, inputnetwork, world_rank, updateindex, Included, 20)
 
 	print(str(newnodecount) + ' ' + str(newedgecount) + ' ' + str(sig))
 

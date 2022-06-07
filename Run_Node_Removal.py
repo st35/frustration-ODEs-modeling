@@ -49,7 +49,7 @@ while True:
 
 	sensitivitycalc = subprocess.run(['../../code/Calculate_Sensitivities', 'network', str(world_rank), str(updateindex), '1'], capture_output = True, text = True)
 
-	newedgecount = Remove_Nodes(0, inputnetwork, world_rank, updateindex)
+	newedgecount = Remove_Nodes(1, inputnetwork, world_rank, updateindex)
 
 	if newedgecount < 1:
 		break

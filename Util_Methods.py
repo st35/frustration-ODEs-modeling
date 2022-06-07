@@ -190,6 +190,28 @@ def Steadystates_PCA(filename, skipcount):
 
 	return(pca.explained_variance_ratio_)
 
+def Steadystates_PCA_Norm(filename, skipcount):
+	import numpy as np
+	from sklearn.decomposition import PCA
+	from scipy.stats import zscore
+
+	S = []
+	count = 0
+	with open(filename, 'r') as f:
+		for line in f:
+			l = line.strip().split(' ')
+			S.append([])
+			for i in range(skipcount, len(l)):
+				S[count].append(float(l[i].strip()))
+			count += 1
+	states = np.array(S)
+	states = zscore(S)
+	pca = PCA(n_components = min(len(S), len(S[0])))
+	pca.fit(states)
+
+	return(pca.explained_variance_ratio_)
+
+
 def Write_IDS_File(topofile, outputfile):
 	IDs = []
 	with open(topofile, 'r') as f:
